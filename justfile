@@ -29,6 +29,17 @@ init-flix DAY:
   #!/usr/bin/env sh
   cd day{{DAY}}/flix
   flix init
+init-go DAY:
+  #!/usr/bin/env sh
+  cd day{{DAY}}/go
+  go mod init "day{{DAY}}"
+  cat <<-EOF > main.go
+  package main
+  import "fmt"
+  func main() {
+      fmt.Println("Hello day{{DAY}}!")
+  }
+  EOF
 
 init LANG DAY:
   #!/usr/bin/env sh
@@ -60,6 +71,12 @@ run-flix DAY:
   #!/usr/bin/env sh
   cd day{{DAY}}/flix
   flix run
+
+[private]
+run-go DAY:
+  #!/usr/bin/env sh
+  cd day{{DAY}}/go
+  go run .
 
 run LANG DAY:
   just -q run-{{LANG}} {{DAY}}
