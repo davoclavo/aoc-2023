@@ -1,0 +1,12 @@
+.direnv
+.devenv
+.aoc
+result
+target
+build
+out
+.scala-build
+.metals
+.bloop
+.bsp
+zig-cache
