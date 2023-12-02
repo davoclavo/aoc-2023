@@ -44,7 +44,7 @@ init-go DAY:
 init LANG DAY:
   #!/usr/bin/env sh
   mkdir -p day{{DAY}}/{{LANG}}
-  aoc download --day {{DAY}} --overwrite --input-file day{{DAY}}/{{LANG}}/input.txt --puzzle-file day{{DAY}}/README.md
+  aoc download --day {{DAY}} --overwrite --input-file day{{DAY}}/{{LANG}}/input.txt --puzzle-file day{{DAY}}/README.md --session .aoc
   cd day{{DAY}}/{{LANG}}
   just -q init-{{LANG}} {{DAY}}
 
