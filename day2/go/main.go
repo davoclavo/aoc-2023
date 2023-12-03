@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var maxBlocks = map[string]int64{
+var maxCubes = map[string]int64{
 	"red":   12,
 	"green": 13,
 	"blue":  14,
@@ -35,8 +35,16 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 		log.Print("Reading line: ", line)
-		numberPartOne := extractNumberPartOne(line)
-		numberPartTwo := extractNumberPartTwo(line)
+
+		res, err := p.Run(gameParser, line)
+		game := res.(Game)
+		log.Print(game)
+		log.Print(err)
+		if err != nil {
+			log.Panicf("Error parsing line: \n%s", err)
+		}
+		numberPartOne := extractNumberPartOne(game)
+		numberPartTwo := extractNumberPartTwo(game)
 		accumPartOne = accumPartOne + numberPartOne
 		accumPartTwo = accumPartTwo + numberPartTwo
 	}
@@ -101,19 +109,11 @@ var gameParser = p.Seq(
 	n.Result = Game{Id: n.Child[1].Result.(int64), Sets: n.Child[3].Result.([]Set)}
 })
 
-func extractNumberPartOne(line string) int {
-	res, err := p.Run(gameParser, line)
-	game := res.(Game)
-	log.Print(game)
-	log.Print(err)
-	if err != nil {
-		log.Panicf("Error parsing line: \n%s", err)
-	}
-
+func extractNumberPartOne(game Game) int {
 	var number = game.Id
 	for _, set := range game.Sets {
 		for _, cubes := range set {
-			maxCount, _ := maxBlocks[cubes.Color]
+			maxCount, _ := maxCubes[cubes.Color]
 			if cubes.Count > maxCount {
 				number = 0
 			}
@@ -123,8 +123,28 @@ func extractNumberPartOne(line string) int {
 	return int(number)
 }
 
-func extractNumberPartTwo(line string) int {
-	number := 0
+func extractNumberPartTwo(game Game) int {
+
+	var minCubes = map[string]int64{
+		"red":   0,
+		"green": 0,
+		"blue":  0,
+	}
+
+	for _, set := range game.Sets {
+    for _, cube := range set {
+			minColor, _ := minCubes[cube.Color]
+			if cube.Count > minColor {
+				minCubes[cube.Color] = cube.Count
+			}
+		}
+	}
+
+	minRed, _ := minCubes["red"]
+	minGreen, _ := minCubes["green"]
+	minBlue, _ := minCubes["blue"]
+
+	number := int(minRed * minGreen * minBlue)
 	log.Print("Part 2: ", number)
 	return number
 }
