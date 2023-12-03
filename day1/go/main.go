@@ -8,9 +8,29 @@ import (
 	"regexp"
 	"strings"
 	"strconv"
+	"time"
 	)
 
+var numbers = []string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
+
+var strToNum = make(map[string]int)
+
+func init() {
+	// Fill mapping of string to numbers
+	for i, str := range numbers {
+		strToNum[str] = i + 1
+	}
+}
+
+func timer() func() {
+	start := time.Now()
+	return func() {
+		log.Printf("Timer: %v", time.Since(start))
+	}
+}
+
 func main() {
+	defer timer()()
 	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal("Error opening file: ", err)
@@ -23,8 +43,8 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 		log.Print("Reading line: ", line)
-		numberPartOne := ExtractNumberPartOne(line)
-		numberPartTwo := ExtractNumberPartTwo(line)
+		numberPartOne := extractNumberPartOne(line)
+		numberPartTwo := extractNumberPartTwo(line)
 		accumPartOne = accumPartOne + numberPartOne
 		accumPartTwo = accumPartTwo + numberPartTwo
 	}
@@ -33,12 +53,12 @@ func main() {
 		log.Fatal("Error scanning file", err)
 	}
 
-
-	fmt.Println("Result part one: ", accumPartOne)
-	fmt.Println("Result part two: ", accumPartTwo)
+	log.Print("----------------")
+	log.Print("Result part one: ", accumPartOne)
+	log.Print("Result part two: ", accumPartTwo)
 }
 
-func ExtractNumberPartOne(line string) int {
+func extractNumberPartOne(line string) int {
 	r := regexp.MustCompile(`\d`)
 	matches := r.FindAllString(line, -1)
 
@@ -50,23 +70,15 @@ func ExtractNumberPartOne(line string) int {
 	if err != nil {
 		log.Fatal("Error extracting number from ", numberString, err)
 	}
-	fmt.Println(number)
+	log.Print("Part 1: ", number)
 	return number
 }
 
 
-var numbers = []string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
-
-var strToNum = make(map[string]int)
-
-func ExtractNumberPartTwo(line string) int {
-	// Fill mapping of string to numbers
-	for i, str := range numbers {
-		strToNum[str] = i + 1
-	}
-
-	stringForwards := fmt.Sprintf(`(\d|%s)`, strings.Join(numbers, "|"))
-	stringBackwards := fmt.Sprintf(`(\d|%s)`, strings.Join(mapReverse(numbers), "|"))
+func extractNumberPartTwo(line string) int {
+	numbersPattern := strings.Join(numbers, "|")
+	stringForwards := fmt.Sprintf(`(\d|%s)`, numbersPattern)
+	stringBackwards := fmt.Sprintf(`(\d|%s)`, reverseString(numbersPattern))
 	regexpForwards := regexp.MustCompile(stringForwards)
 	regexpBackwards := regexp.MustCompile(stringBackwards)
 
@@ -74,7 +86,7 @@ func ExtractNumberPartTwo(line string) int {
 	last := regexpBackwards.FindString(reverseString(line))
 
 	number := stringToInt(first) * 10 + stringToInt(reverseString(last))
-	fmt.Println(number)
+	log.Print("Part 2: ", number)
 	return number
 }
 
@@ -86,22 +98,15 @@ func reverseString(s string) string {
 	return string(runes)
 }
 
-func mapReverse(arr []string) []string {
-	result := make([]string, len(arr))
-
-	for i, str := range arr {
-		result[i] = reverseString(str)
-	}
-
-	return result
-}
-
 func stringToInt(s string) int {
 	number, err := strconv.Atoi(s)
 	if err == nil {
 		return number
 	} else {
-		value, _ := strToNum[s]
+		value, err := strToNum[s]
+		if !err {
+			log.Panicf("%s is not a digit or a number", s)
+		}
 		return value
 	}
 }
