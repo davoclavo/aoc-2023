@@ -1,34 +1,9 @@
-[private]
+default := 'help'
+
 help:
   just -l
 
-
 [private]
-init-scala DAY:
-  #!/usr/bin/env sh
-  cd day{{DAY}}/scala
-  cat <<-EOF > Main.scala
-  package aoc.day{{DAY}}
-  object Main extends App { println("Hello day{{DAY}}") }
-  EOF
-
-[private]
-init-rust DAY:
-  #!/usr/bin/env sh
-  cd day{{DAY}}/rust
-  cargo init --name "day{{DAY}}"
-
-[private]
-init-zig DAY:
-  #!/usr/bin/env sh
-  cd day{{DAY}}/zig
-  zig init-exe
-
-[private]
-init-flix DAY:
-  #!/usr/bin/env sh
-  cd day{{DAY}}/flix
-  flix init
 init-go DAY:
   #!/usr/bin/env sh
   cd day{{DAY}}/go
@@ -41,47 +16,44 @@ init-go DAY:
   }
   EOF
 
+# Fetch AdventOfCode README, input and examples for DAY.
+get DAY:
+    #!/usr/bin/env sh
+    set -e
+    mkdir -p day{{DAY}}
+    cd day{{DAY}}
+    aoc download --day {{DAY}} --overwrite --input-file input.txt --puzzle-file README.md --session ../.aoc
+    awk -f ../parts-from-md.awk README.md
+    touch part1.txt part2.txt
+
+# Initialize a new LANG project for solving DAY.
 init LANG DAY:
-  #!/usr/bin/env sh
-  mkdir -p day{{DAY}}/{{LANG}}
-  aoc download --day {{DAY}} --overwrite --input-file day{{DAY}}/{{LANG}}/input.txt --puzzle-file day{{DAY}}/README.md --session .aoc
-  cd day{{DAY}}/{{LANG}}
-  just -q init-{{LANG}} {{DAY}}
+    #!/usr/bin/env sh
+    set -e
+    just -q get {{DAY}}
+    mkdir -p day{{DAY}}/{{LANG}}
+    cd day{{DAY}}/{{LANG}}
+    curl -sSL https://www.toptal.com/developers/gitignore/api/{{LANG}} -o .gitignore
+    just -q init-{{LANG}} {{DAY}}
 
-[private]
-run-scala DAY:
-  #!/usr/bin/env sh
-  cd day{{DAY}}/scala
-  scala-cli run .
-
-[private]
-run-rust DAY:
-  #!/usr/bin/env sh
-  cd day{{DAY}}/rust
-  cargo run
-
-[private]
-run-zig DAY:
-  #!/usr/bin/env sh
-  cd day{{DAY}}/zig
-  zig run
-
-[private]
-run-flix DAY:
-  #!/usr/bin/env sh
-  cd day{{DAY}}/flix
-  flix run
-
-[private]
-run-go DAY:
+run-go DAY INPUT:
   #!/usr/bin/env sh
   cd day{{DAY}}/go
-  go run .
+  go run main.go {{INPUT}}
 
+# Run LANG project with the personalized input for DAY.
 run LANG DAY:
-  just -q run-{{LANG}} {{DAY}}
+    just run-{{LANG}} {{DAY}} $(pwd)/day{{DAY}}/input.txt
+    # Run LANG project with the first example input from README.
+run-part1 LANG DAY:
+    just run-{{LANG}} {{DAY}} $(pwd)/day{{DAY}}/part1.txt
+    # Run LANG project with the second example input from README.
+run-part2 LANG DAY:
+    just run-{{LANG}} {{DAY}} $(pwd)/day{{DAY}}/part2.txt
 
 watch LANG DAY:
   watchexec --watch day{{DAY}}/{{LANG}} --workdir day{{DAY}}/{{LANG}} --restart --clear reset just -q run-{{LANG}} {{DAY}}
-  
 
+
+submit DAY PART VALUE:
+    aoc submit --day {{DAY}} --session .aoc {{PART}} {{VALUE}}

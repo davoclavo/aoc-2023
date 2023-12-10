@@ -23,7 +23,7 @@ func timer() func() {
 
 func main() {
 	defer timer()()
-	file, err := os.Open("input.txt")
+	file, err := os.Open(os.Args[1])
 	if err != nil {
 		log.Fatal("Error opening file: ", err)
 	}
@@ -34,6 +34,9 @@ func main() {
 	var accumPartTwo int = 0
 	for scanner.Scan() {
 		line := scanner.Text()
+		if line == "" {
+			continue
+		}
 		log.Print("Reading line: ", line)
 
 		res, err := p.Run(gameParser, line)
