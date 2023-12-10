@@ -21,7 +21,7 @@ func timer() func() {
 
 func main() {
 	defer timer()()
-	file, err := os.Open("input.txt")
+	file, err := os.Open(os.Args[1])
 	if err != nil {
 		log.Fatal("Error opening file: ", err)
 	}
@@ -31,6 +31,9 @@ func main() {
 	var rows = []Row{}
 	for scanner.Scan() {
 		line := scanner.Text()
+		if line == "" {
+			continue
+		}
 		log.Print("Reading line: ", line)
 
 		res, err := p.Run(rowParser, line)
@@ -46,8 +49,7 @@ func main() {
 	}
 
 	numberPartOne := calculateNumberPartOne(rows)
-
-	// numberPartTwo := extractNumberPartTwo(game)
+	numberPartTwo := calculateNumberPartTwo(rows)
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal("Error scanning file", err)
@@ -55,7 +57,7 @@ func main() {
 
 	log.Print("----------------")
 	log.Print("Result part one: ", numberPartOne)
-	// log.Print("Result part two: ", numberPartTwo)
+	log.Print("Result part two: ", numberPartTwo)
 }
 
 type Number struct {
@@ -65,6 +67,7 @@ type Number struct {
 
 type Symbol struct {
 	X int64
+	Y int
 }
 
 type Row struct {
@@ -109,8 +112,40 @@ var rowParser = p.Seq(
 
 func calculateNumberPartOne(rows []Row) int {
 
-	var accumulator = 0
+	var accumulator int64 = 0
 
+	symbolMap := getSymbolMap(rows)
+
+	for _, numbers := range symbolMap {
+		for _, number := range numbers {
+			accumulator += number.Value
+		}
+	}
+	return int(accumulator)
+}
+
+
+func calculateNumberPartTwo(rows []Row) int {
+
+	var accumulator int64 = 0
+
+
+	symbolMap := getSymbolMap(rows)
+
+	for symbol, numbers := range symbolMap {
+		log.Printf("%+v", symbol)
+		log.Printf("%+v", numbers)
+		if len(numbers) == 2 {
+			accumulator += numbers[0].Value * numbers[1].Value
+		}
+	}
+
+	return int(accumulator)
+}
+
+
+func getSymbolMap(rows []Row) map[Symbol][]Number {
+	var symbolMap = make(map[Symbol][]Number)
 	for idx, row := range rows {
 		for _, number := range row.Numbers {
 			minRow := int(math.Max(0, float64(idx) - 1))
@@ -118,20 +153,17 @@ func calculateNumberPartOne(rows []Row) int {
 			minCol := number.X - 1
 			maxCol := number.X + int64(math.Trunc(math.Log10(float64(number.Value)))) + 1
 
-			for _, applicableRow := range rows[minRow : maxRow + 1] {
+			for i, applicableRow := range rows[minRow : maxRow + 1] {
 				symbols := applicableRow.Symbols
 				symbolIdx := slices.IndexFunc(symbols, func(s Symbol) bool { return s.X >= minCol && s.X <= maxCol })
 				if symbolIdx != -1 {
-					accumulator = accumulator + int(number.Value)
-					// log.Printf("found! %v, %v - %v", number.X, idx, number.Value)
-					// log.Printf("range: %v, %v - %v, %v", minRow, maxRow, minCol, maxCol)
-					// log.Printf("symbol! %v, %v", symbols, symbolIdx)
-					break
+					symbol := symbols[symbolIdx]
+					symbol.Y = minRow + i
+					symbolMap[symbol] = append(symbolMap[symbol], number)
 				}
 			}
 
 		}
-
 	}
-	return accumulator
+	return symbolMap
 }
